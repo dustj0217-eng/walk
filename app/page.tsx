@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 
-type Tab = "home" | "walk" | "history" | "map" | "badges" | "profile";
+type Tab = "home" | "history" | "map" | "community";
 type WalkState = "idle" | "running" | "paused";
 
 const USER = {
@@ -26,10 +26,12 @@ const WEEK = [
 ];
 
 const HISTORY = [
-  { id: 1, date: "3월 3일", dow: "화", km: 3.2, minutes: 42, cal: 198, steps: 4280, pace: "13'08\"" },
-  { id: 2, date: "3월 2일", dow: "월", km: 2.1, minutes: 28, cal: 130, steps: 2810, pace: "13'20\"" },
-  { id: 3, date: "3월 1일", dow: "일", km: 5.0, minutes: 64, cal: 312, steps: 6700, pace: "12'48\"" },
-  { id: 4, date: "2월 28일", dow: "토", km: 2.7, minutes: 35, cal: 167, steps: 3610, pace: "12'57\"" },
+  { id: 1, date: "6월 4일", dow: "화", km: 3.2, minutes: 42, cal: 198, steps: 4280, pace: "13'08\"" },
+  { id: 2, date: "6월 3일", dow: "월", km: 2.1, minutes: 28, cal: 130, steps: 2810, pace: "13'20\"" },
+  { id: 3, date: "6월 1일", dow: "토", km: 5.0, minutes: 64, cal: 312, steps: 6700, pace: "12'48\"" },
+  { id: 4, date: "5월 31일", dow: "금", km: 1.8, minutes: 22, cal: 111, steps: 2400, pace: "12'13\"" },
+  { id: 5, date: "5월 29일", dow: "수", km: 4.4, minutes: 55, cal: 273, steps: 5880, pace: "12'30\"" },
+  { id: 6, date: "5월 28일", dow: "화", km: 2.7, minutes: 35, cal: 167, steps: 3610, pace: "12'57\"" },
 ];
 
 const BADGES = [
@@ -47,8 +49,82 @@ const BADGES = [
   { id: 12, name: "산책왕", desc: "누적 500km 달성", earned: false },
 ];
 
+const FEED = [
+  {
+    id: 1,
+    user: "민준",
+    initials: "민",
+    time: "방금 전",
+    type: "record",
+    km: 4.8,
+    minutes: 58,
+    cal: 298,
+    location: "한강공원 · 여의도",
+    body: "퇴근길에 한강 한 바퀴. 바람이 딱 좋았어요.",
+    likes: 12,
+    comments: 3,
+    liked: false,
+  },
+  {
+    id: 2,
+    user: "서연",
+    initials: "서",
+    time: "23분 전",
+    type: "badge",
+    badge: "7일 연속",
+    body: "드디어 일주일 연속 달성! 꾸준히 하는 게 제일 어렵더라고요.",
+    likes: 31,
+    comments: 7,
+    liked: true,
+  },
+  {
+    id: 3,
+    user: "태윤",
+    initials: "태",
+    time: "1시간 전",
+    type: "record",
+    km: 2.3,
+    minutes: 29,
+    cal: 142,
+    location: "올림픽공원 · 송파",
+    body: null,
+    likes: 5,
+    comments: 0,
+    liked: false,
+  },
+  {
+    id: 4,
+    user: "하은",
+    initials: "하",
+    time: "3시간 전",
+    type: "course",
+    courseKm: 3.5,
+    courseName: "서울숲 순환 코스",
+    courseDesc: "서울숲 입구 → 수변공원 → 생태숲 → 다시 입구. 그늘 많고 평탄해서 초보자도 무리 없어요.",
+    likes: 48,
+    comments: 11,
+    liked: false,
+  },
+  {
+    id: 5,
+    user: "준서",
+    initials: "준",
+    time: "5시간 전",
+    type: "record",
+    km: 7.1,
+    minutes: 88,
+    cal: 441,
+    location: "북한산 둘레길 · 은평",
+    body: "주말 아침 북한산. 숨이 찼지만 공기가 너무 좋아서 계속 걷게 됨.",
+    likes: 64,
+    comments: 9,
+    liked: false,
+  },
+];
+
+
 // ── Home ───────────────────────────────────────────────
-function HomeScreen({ setTab, now }: { setTab: (t: Tab) => void; now: Date }) {
+function HomeScreen({ setTab, now, onStartWalk }: { setTab: (t: Tab) => void; now: Date; onStartWalk: () => void }) {
   const weekGoalKm = 20;
   const weekDoneKm = WEEK.reduce((a, d) => a + d.km, 0);
   const maxKm = Math.max(...WEEK.map(d => d.km), 1);
@@ -93,7 +169,7 @@ function HomeScreen({ setTab, now }: { setTab: (t: Tab) => void; now: Date }) {
       </div>
 
       {/* Start */}
-      <button onClick={() => setTab("walk")} style={{
+      <button onClick={onStartWalk} style={{
         width: "100%", padding: "17px 0", borderRadius: 16,
         background: "#111", color: "#fff", fontSize: 15, fontWeight: 700,
         border: "none", cursor: "pointer", letterSpacing: 0.2,
@@ -149,7 +225,7 @@ function HomeScreen({ setTab, now }: { setTab: (t: Tab) => void; now: Date }) {
 }
 
 // ── Walk ───────────────────────────────────────────────
-function WalkScreen() {
+function WalkScreen({ onClose }: { onClose: () => void }) {
   const [state, setState] = useState<WalkState>("idle");
   const [seconds, setSeconds] = useState(0);
 
@@ -175,11 +251,24 @@ function WalkScreen() {
 
   return (
     <div style={{ padding: "24px 20px 0", display: "flex", flexDirection: "column", gap: 14 }}>
-      <div>
-        <p style={{ fontSize: 10, color: "#aaa", margin: 0, letterSpacing: 1, textTransform: "uppercase" }}>
-          {state === "idle" ? "Ready" : state === "running" ? "In Progress" : "Paused"}
-        </p>
-        <h2 style={{ fontSize: 22, fontWeight: 800, margin: "4px 0 0", color: "#111", letterSpacing: -0.5 }}>산책</h2>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+        <div>
+          <p style={{ fontSize: 10, color: "#aaa", margin: 0, letterSpacing: 1, textTransform: "uppercase" }}>
+            {state === "idle" ? "Ready" : state === "running" ? "In Progress" : "Paused"}
+          </p>
+          <h2 style={{ fontSize: 22, fontWeight: 800, margin: "4px 0 0", color: "#111", letterSpacing: -0.5 }}>산책</h2>
+        </div>
+        {state === "idle" && (
+          <button onClick={onClose} style={{
+            background: "#f0f0f0", border: "none", cursor: "pointer",
+            width: 32, height: 32, borderRadius: 99,
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M1 1l10 10M11 1L1 11" stroke="#111" strokeWidth="1.8" strokeLinecap="round"/>
+            </svg>
+          </button>
+        )}
       </div>
 
       <div style={{
@@ -523,6 +612,150 @@ function HistoryScreen() {
 }
 
 
+// ── Community ──────────────────────────────────────────
+function CommunityScreen() {
+  const [feed, setFeed] = useState(FEED);
+
+  const toggleLike = (id: number) => {
+    setFeed(prev => prev.map(p =>
+      p.id === id
+        ? { ...p, liked: !p.liked, likes: p.liked ? p.likes - 1 : p.likes + 1 }
+        : p
+    ));
+  };
+
+  return (
+    <div style={{ padding: "24px 20px 0" }}>
+      {/* Header */}
+      <div style={{ marginBottom: 20 }}>
+        <p style={{ fontSize: 10, color: "#aaa", margin: 0, letterSpacing: 1, textTransform: "uppercase" }}>Feed</p>
+        <h2 style={{ fontSize: 22, fontWeight: 800, margin: "4px 0 0", color: "#111", letterSpacing: -0.5 }}>커뮤니티</h2>
+      </div>
+
+      {/* Feed */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        {feed.map((post, i) => (
+          <div key={post.id}>
+            <div style={{ paddingBottom: 18 }}>
+              {/* User row */}
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                <div style={{
+                  width: 36, height: 36, borderRadius: 99, background: "#111",
+                  display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>{post.initials}</span>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontSize: 13, fontWeight: 700, color: "#111", margin: 0 }}>{post.user}</p>
+                  <p style={{ fontSize: 11, color: "#bbb", margin: 0 }}>{post.time}</p>
+                </div>
+              </div>
+
+              {/* Content by type */}
+              {post.type === "record" && (
+                <div style={{ background: "#f5f5f5", borderRadius: 16, padding: "14px 16px", marginBottom: 10 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: (post as any).location ? 6 : 0 }}>
+                    <div>
+                      <p style={{ fontSize: 10, color: "#aaa", margin: "0 0 2px" }}>거리</p>
+                      <p style={{ fontSize: 28, fontWeight: 900, margin: 0, color: "#111", letterSpacing: -1 }}>
+                        {(post as any).km}<span style={{ fontSize: 13, fontWeight: 500, color: "#bbb", marginLeft: 2 }}>km</span>
+                      </p>
+                    </div>
+                    <div style={{ textAlign: "right", display: "flex", gap: 12 }}>
+                      {[
+                        { label: "시간", value: `${(post as any).minutes}분` },
+                        { label: "칼로리", value: `${(post as any).cal}kcal` },
+                      ].map(s => (
+                        <div key={s.label}>
+                          <p style={{ fontSize: 10, color: "#aaa", margin: "0 0 2px" }}>{s.label}</p>
+                          <p style={{ fontSize: 14, fontWeight: 700, color: "#111", margin: 0 }}>{s.value}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  {(post as any).location && (
+                    <p style={{ fontSize: 11, color: "#bbb", margin: "8px 0 0" }}>{(post as any).location}</p>
+                  )}
+                </div>
+              )}
+
+              {post.type === "badge" && (
+                <div style={{
+                  background: "#111", borderRadius: 16, padding: "14px 16px", marginBottom: 10,
+                  display: "flex", alignItems: "center", gap: 14,
+                }}>
+                  <div style={{
+                    width: 44, height: 44, borderRadius: 12,
+                    background: "#222", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                  }}>
+                    <div style={{ width: 16, height: 16, borderRadius: 99, background: "#fff" }} />
+                  </div>
+                  <div>
+                    <p style={{ fontSize: 10, color: "#555", margin: "0 0 2px", letterSpacing: 0.5 }}>뱃지 획득</p>
+                    <p style={{ fontSize: 15, fontWeight: 800, color: "#fff", margin: 0 }}>{(post as any).badge}</p>
+                  </div>
+                </div>
+              )}
+
+              {post.type === "course" && (
+                <div style={{ background: "#f5f5f5", borderRadius: 16, padding: "14px 16px", marginBottom: 10 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
+                    <p style={{ fontSize: 14, fontWeight: 700, color: "#111", margin: 0 }}>{(post as any).courseName}</p>
+                    <span style={{
+                      fontSize: 11, fontWeight: 600, color: "#111",
+                      background: "#e8e8e8", borderRadius: 99, padding: "3px 10px", whiteSpace: "nowrap", marginLeft: 8,
+                    }}>{(post as any).courseKm}km</span>
+                  </div>
+                  <p style={{ fontSize: 12, color: "#888", margin: 0, lineHeight: 1.6 }}>{(post as any).courseDesc}</p>
+                </div>
+              )}
+
+              {/* Body text */}
+              {post.body && (
+                <p style={{ fontSize: 13, color: "#444", margin: "0 0 10px", lineHeight: 1.6 }}>{post.body}</p>
+              )}
+
+              {/* Actions */}
+              <div style={{ display: "flex", gap: 16 }}>
+                <button
+                  onClick={() => toggleLike(post.id)}
+                  style={{
+                    background: "none", border: "none", cursor: "pointer", padding: 0,
+                    display: "flex", alignItems: "center", gap: 5,
+                  }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <path
+                      d="M12 21C12 21 3 14.5 3 8.5C3 5.42 5.42 3 8.5 3C10.24 3 11.79 3.89 12 5C12.21 3.89 13.76 3 15.5 3C18.58 3 21 5.42 21 8.5C21 14.5 12 21 12 21Z"
+                      stroke={post.liked ? "#e55" : "#ccc"}
+                      fill={post.liked ? "#e55" : "none"}
+                      strokeWidth="1.8"
+                    />
+                  </svg>
+                  <span style={{ fontSize: 12, color: post.liked ? "#e55" : "#bbb", fontWeight: post.liked ? 700 : 400 }}>
+                    {post.likes}
+                  </span>
+                </button>
+                <button style={{
+                  background: "none", border: "none", cursor: "pointer", padding: 0,
+                  display: "flex", alignItems: "center", gap: 5,
+                }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <path d="M21 15C21 15.5304 20.7893 16.0391 20.4142 16.4142C20.0391 16.7893 19.5304 17 19 17H7L3 21V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V15Z"
+                      stroke="#ccc" strokeWidth="1.8" strokeLinejoin="round"/>
+                  </svg>
+                  <span style={{ fontSize: 12, color: "#bbb" }}>{post.comments}</span>
+                </button>
+              </div>
+            </div>
+            {i < feed.length - 1 && <div style={{ height: 1, background: "#f0f0f0", marginBottom: 18 }} />}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ── Badges ─────────────────────────────────────────────
 function BadgesScreen() {
   const earned = BADGES.filter(b => b.earned).length;
@@ -560,16 +793,30 @@ function BadgesScreen() {
   );
 }
 
-// ── Profile ────────────────────────────────────────────
-function ProfileScreen() {
+// ── Profile (with badges) ──────────────────────────────
+function ProfileScreen({ onClose }: { onClose: () => void }) {
   const xpPct = (USER.xp / USER.xpMax) * 100;
+  const earned = BADGES.filter(b => b.earned).length;
   return (
-    <div style={{ padding: "24px 20px 0" }}>
-      <div style={{ marginBottom: 22 }}>
-        <p style={{ fontSize: 10, color: "#aaa", margin: 0, letterSpacing: 1, textTransform: "uppercase" }}>My Account</p>
-        <h2 style={{ fontSize: 22, fontWeight: 800, margin: "4px 0 0", color: "#111", letterSpacing: -0.5 }}>프로필</h2>
+    <div style={{ padding: "0 20px 40px" }}>
+      {/* Header */}
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "20px 0 22px",
+      }}>
+        <h2 style={{ fontSize: 22, fontWeight: 800, margin: 0, color: "#111", letterSpacing: -0.5 }}>프로필</h2>
+        <button onClick={onClose} style={{
+          background: "none", border: "none", cursor: "pointer",
+          width: 32, height: 32, borderRadius: 99,
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <path d="M1 1l10 10M11 1L1 11" stroke="#111" strokeWidth="1.8" strokeLinecap="round"/>
+          </svg>
+        </button>
       </div>
 
+      {/* Avatar */}
       <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 18 }}>
         <div style={{ width: 56, height: 56, borderRadius: 99, background: "#111" }} />
         <div>
@@ -578,6 +825,7 @@ function ProfileScreen() {
         </div>
       </div>
 
+      {/* XP */}
       <div style={{ background: "#f5f5f5", borderRadius: 16, padding: "16px 18px", marginBottom: 10 }}>
         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
           <span style={{ fontSize: 13, fontWeight: 700, color: "#111" }}>경험치</span>
@@ -589,11 +837,12 @@ function ProfileScreen() {
         <p style={{ fontSize: 11, color: "#bbb", margin: "8px 0 0" }}>다음 레벨까지 {USER.xpMax - USER.xp} XP</p>
       </div>
 
-      <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
+      {/* Stats */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
         {[
           { label: "총 거리", value: USER.totalKm, unit: "km" },
           { label: "총 산책", value: USER.totalWalks, unit: "회" },
-          { label: "획득 뱃지", value: BADGES.filter(b => b.earned).length, unit: "개" },
+          { label: "획득 뱃지", value: earned, unit: "개" },
         ].map(s => (
           <div key={s.label} style={{ flex: 1, background: "#f5f5f5", borderRadius: 14, padding: "13px 10px", textAlign: "center" }}>
             <p style={{ fontSize: 10, color: "#bbb", margin: 0 }}>{s.label}</p>
@@ -604,13 +853,38 @@ function ProfileScreen() {
         ))}
       </div>
 
+      {/* Badges section */}
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 12 }}>
+          <p style={{ fontSize: 14, fontWeight: 700, color: "#111", margin: 0 }}>뱃지</p>
+          <p style={{ fontSize: 11, color: "#bbb", margin: 0 }}>{earned} / {BADGES.length}</p>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8 }}>
+          {BADGES.map(b => (
+            <div key={b.id} style={{
+              background: b.earned ? "#111" : "#f5f5f5",
+              borderRadius: 14, padding: "12px 8px",
+              display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
+            }}>
+              <div style={{
+                width: 26, height: 26, borderRadius: 99,
+                background: b.earned ? "#222" : "#e8e8e8",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+                <div style={{ width: 8, height: 8, borderRadius: 99, background: b.earned ? "#fff" : "#ccc" }} />
+              </div>
+              <p style={{ fontSize: 10, fontWeight: 700, margin: 0, color: b.earned ? "#fff" : "#ccc", textAlign: "center", lineHeight: 1.3 }}>{b.name}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Settings */}
       <div style={{ background: "#f5f5f5", borderRadius: 16, overflow: "hidden" }}>
         {["알림 설정", "목표 거리 설정", "단위 설정", "로그아웃"].map((item, i, arr) => (
           <div key={item} style={{
-            padding: "16px 18px",
-            display: "flex", justifyContent: "space-between", alignItems: "center",
-            borderBottom: i < arr.length - 1 ? "1px solid #ebebeb" : "none",
-            cursor: "pointer",
+            padding: "16px 18px", display: "flex", justifyContent: "space-between", alignItems: "center",
+            borderBottom: i < arr.length - 1 ? "1px solid #ebebeb" : "none", cursor: "pointer",
           }}>
             <span style={{ fontSize: 14, color: i === arr.length - 1 ? "#e55" : "#111" }}>{item}</span>
             {i < arr.length - 1 && <span style={{ fontSize: 16, color: "#d0d0d0" }}>›</span>}
@@ -624,19 +898,23 @@ function ProfileScreen() {
 // ── App Shell ──────────────────────────────────────────
 const TABS: { id: Tab; label: string }[] = [
   { id: "home", label: "홈" },
-  { id: "walk", label: "산책" },
   { id: "history", label: "기록" },
   { id: "map", label: "지도" },
-  { id: "profile", label: "프로필" },
+  { id: "community", label: "커뮤니티" },
 ];
 
 export default function StrollyApp() {
   const [tab, setTab] = useState<Tab>("home");
   const [now, setNow] = useState(new Date());
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [walkOpen, setWalkOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(t);
   }, []);
+
   const timeStr = now.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false });
 
   return (
@@ -674,17 +952,32 @@ export default function StrollyApp() {
         </div>
       </div>
 
-      {/* Content */}
-      <div style={{ flex: 1, overflowY: "auto", paddingBottom: 76 }}>
-        {tab === "home" && <HomeScreen setTab={setTab} now={now} />}
-        {tab === "walk" && <WalkScreen />}
-        {tab === "history" && <HistoryScreen />}
-        {tab === "map" && <MapScreen />}
-        {tab === "badges" && <BadgesScreen />}
-        {tab === "profile" && <ProfileScreen />}
+      {/* Top Nav */}
+      <div style={{
+        height: 44, display: "flex", alignItems: "center",
+        justifyContent: "space-between", padding: "0 20px", flexShrink: 0,
+        borderBottom: "1px solid #f5f5f5",
+      }}>
+        <span style={{ fontSize: 17, fontWeight: 900, color: "#111", letterSpacing: -0.5 }}>Strolly</span>
+        <button
+          onClick={() => setMenuOpen(true)}
+          style={{ background: "none", border: "none", cursor: "pointer", padding: 4, display: "flex", flexDirection: "column", gap: 4 }}
+        >
+          <span style={{ display: "block", width: 20, height: 2, background: "#111", borderRadius: 99 }} />
+          <span style={{ display: "block", width: 14, height: 2, background: "#111", borderRadius: 99 }} />
+          <span style={{ display: "block", width: 20, height: 2, background: "#111", borderRadius: 99 }} />
+        </button>
       </div>
 
-      {/* Tab Bar — text only */}
+      {/* Content */}
+      <div style={{ flex: 1, overflowY: "auto", paddingBottom: 76 }}>
+        {tab === "home" && <HomeScreen setTab={setTab} now={now} onStartWalk={() => setWalkOpen(true)} />}
+        {tab === "history" && <HistoryScreen />}
+        {tab === "map" && <MapScreen />}
+        {tab === "community" && <CommunityScreen />}
+      </div>
+
+      {/* Tab Bar */}
       <div style={{
         position: "absolute", bottom: 0, left: 0, right: 0,
         background: "#fff", borderTop: "1px solid #f0f0f0",
@@ -696,20 +989,112 @@ export default function StrollyApp() {
             display: "flex", flexDirection: "column", alignItems: "center", gap: 5, padding: 0,
           }}>
             <span style={{
-              fontSize: 12,
-              fontWeight: tab === t.id ? 800 : 400,
+              fontSize: 12, fontWeight: tab === t.id ? 800 : 400,
               color: tab === t.id ? "#111" : "#c8c8c8",
               letterSpacing: tab === t.id ? -0.2 : 0,
-            }}>
-              {t.label}
-            </span>
-            <div style={{
-              width: 4, height: 4, borderRadius: 99,
-              background: tab === t.id ? "#111" : "transparent",
-            }} />
+            }}>{t.label}</span>
+            <div style={{ width: 4, height: 4, borderRadius: 99, background: tab === t.id ? "#111" : "transparent" }} />
           </button>
         ))}
       </div>
+
+      {/* ── Slide-in Menu ── */}
+      {menuOpen && (
+        <>
+          <div onClick={() => setMenuOpen(false)} style={{
+            position: "absolute", inset: 0, background: "rgba(0,0,0,0.3)", zIndex: 200,
+          }} />
+          <div style={{
+            position: "absolute", top: 0, right: 0, bottom: 0, width: "78%",
+            background: "#fff", zIndex: 201, display: "flex", flexDirection: "column",
+            padding: "0 24px",
+          }}>
+            {/* Close */}
+            <div style={{ paddingTop: 56, paddingBottom: 28, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontSize: 16, fontWeight: 900, color: "#111" }}>메뉴</span>
+              <button onClick={() => setMenuOpen(false)} style={{
+                background: "#f0f0f0", border: "none", cursor: "pointer",
+                width: 32, height: 32, borderRadius: 99,
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <path d="M1 1l10 10M11 1L1 11" stroke="#111" strokeWidth="1.8" strokeLinecap="round"/>
+                </svg>
+              </button>
+            </div>
+
+            {/* Avatar mini */}
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 32 }}>
+              <div style={{ width: 44, height: 44, borderRadius: 99, background: "#111" }} />
+              <div>
+                <p style={{ fontSize: 14, fontWeight: 800, margin: 0, color: "#111" }}>{USER.name}</p>
+                <p style={{ fontSize: 11, color: "#bbb", margin: "2px 0 0" }}>Level {USER.level}</p>
+              </div>
+            </div>
+
+            {/* Menu items */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              {[
+                { label: "프로필", action: () => { setMenuOpen(false); setProfileOpen(true); } },
+                { label: "산책 시작", action: () => { setMenuOpen(false); setWalkOpen(true); } },
+                { label: "뱃지", action: () => { setMenuOpen(false); setProfileOpen(true); } },
+                { label: "알림 설정", action: () => setMenuOpen(false) },
+                { label: "목표 거리 설정", action: () => setMenuOpen(false) },
+                { label: "단위 설정", action: () => setMenuOpen(false) },
+              ].map((item, i, arr) => (
+                <div key={item.label}>
+                  <button onClick={item.action} style={{
+                    width: "100%", background: "none", border: "none", cursor: "pointer",
+                    padding: "14px 0", textAlign: "left", fontSize: 15,
+                    fontWeight: 600, color: "#111",
+                  }}>{item.label}</button>
+                  {i < arr.length - 1 && <div style={{ height: 1, background: "#f5f5f5" }} />}
+                </div>
+              ))}
+            </div>
+
+            <div style={{ marginTop: "auto", paddingBottom: 40 }}>
+              <button style={{
+                background: "none", border: "none", cursor: "pointer",
+                fontSize: 14, color: "#e55", padding: 0, fontWeight: 600,
+              }}>로그아웃</button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ── Walk Overlay ── */}
+      {walkOpen && (
+        <>
+          <div onClick={() => setWalkOpen(false)} style={{
+            position: "absolute", inset: 0, background: "rgba(0,0,0,0.3)", zIndex: 200,
+          }} />
+          <div style={{
+            position: "absolute", left: 0, right: 0, bottom: 0,
+            background: "#fff", borderRadius: "24px 24px 0 0",
+            zIndex: 201, padding: "20px 20px 40px",
+          }}>
+            <div style={{ width: 36, height: 4, borderRadius: 99, background: "#e0e0e0", margin: "0 auto 24px" }} />
+            <WalkScreen onClose={() => setWalkOpen(false)} />
+          </div>
+        </>
+      )}
+
+      {/* ── Profile Overlay ── */}
+      {profileOpen && (
+        <>
+          <div onClick={() => setProfileOpen(false)} style={{
+            position: "absolute", inset: 0, background: "rgba(0,0,0,0.3)", zIndex: 200,
+          }} />
+          <div style={{
+            position: "absolute", inset: 0, top: 60,
+            background: "#fff", borderRadius: "24px 24px 0 0",
+            zIndex: 201, overflowY: "auto",
+          }}>
+            <ProfileScreen onClose={() => setProfileOpen(false)} />
+          </div>
+        </>
+      )}
     </div>
   );
 }
