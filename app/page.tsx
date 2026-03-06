@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
-type Tab = "home" | "walk" | "history" | "badges" | "profile";
+type Tab = "home" | "walk" | "history" | "map" | "badges" | "profile";
 type WalkState = "idle" | "running" | "paused";
 
 const USER = {
@@ -26,12 +26,10 @@ const WEEK = [
 ];
 
 const HISTORY = [
-  { id: 1, date: "6월 4일", dow: "화", km: 3.2, minutes: 42, cal: 198, steps: 4280, pace: "13'08\"" },
-  { id: 2, date: "6월 3일", dow: "월", km: 2.1, minutes: 28, cal: 130, steps: 2810, pace: "13'20\"" },
-  { id: 3, date: "6월 1일", dow: "토", km: 5.0, minutes: 64, cal: 312, steps: 6700, pace: "12'48\"" },
-  { id: 4, date: "5월 31일", dow: "금", km: 1.8, minutes: 22, cal: 111, steps: 2400, pace: "12'13\"" },
-  { id: 5, date: "5월 29일", dow: "수", km: 4.4, minutes: 55, cal: 273, steps: 5880, pace: "12'30\"" },
-  { id: 6, date: "5월 28일", dow: "화", km: 2.7, minutes: 35, cal: 167, steps: 3610, pace: "12'57\"" },
+  { id: 1, date: "3월 3일", dow: "화", km: 3.2, minutes: 42, cal: 198, steps: 4280, pace: "13'08\"" },
+  { id: 2, date: "3월 2일", dow: "월", km: 2.1, minutes: 28, cal: 130, steps: 2810, pace: "13'20\"" },
+  { id: 3, date: "3월 1일", dow: "일", km: 5.0, minutes: 64, cal: 312, steps: 6700, pace: "12'48\"" },
+  { id: 4, date: "2월 28일", dow: "토", km: 2.7, minutes: 35, cal: 167, steps: 3610, pace: "12'57\"" },
 ];
 
 const BADGES = [
@@ -50,17 +48,20 @@ const BADGES = [
 ];
 
 // ── Home ───────────────────────────────────────────────
-function HomeScreen({ setTab }: { setTab: (t: Tab) => void }) {
+function HomeScreen({ setTab, now }: { setTab: (t: Tab) => void; now: Date }) {
   const weekGoalKm = 20;
   const weekDoneKm = WEEK.reduce((a, d) => a + d.km, 0);
   const maxKm = Math.max(...WEEK.map(d => d.km), 1);
   const xpPct = (USER.xp / USER.xpMax) * 100;
-  const todayIndex = 4; // 금요일 기준 하드코딩
+  const dow = now.getDay(); // 0=일
+  const todayIndex = dow === 0 ? 6 : dow - 1;
+  const greetingHour = now.getHours();
+  const greeting = greetingHour < 12 ? "좋은 아침이에요" : greetingHour < 18 ? "오늘도 걸어볼까요" : "오늘 하루 수고했어요";
 
   return (
     <div style={{ padding: "20px 20px 0", display: "flex", flexDirection: "column", gap: 14 }}>
       <div style={{ paddingTop: 4 }}>
-        <p style={{ fontSize: 12, color: "#aaa", margin: 0, letterSpacing: 0.5 }}>안녕하세요</p>
+        <p style={{ fontSize: 12, color: "#aaa", margin: 0, letterSpacing: 0.5 }}>{greeting}</p>
         <h1 style={{ fontSize: 26, fontWeight: 800, margin: "4px 0 0", color: "#111", letterSpacing: -0.8 }}>
           {USER.name}님
         </h1>
@@ -238,8 +239,161 @@ const btn = (bg: string, color: string, border = "none"): React.CSSProperties =>
   border, cursor: "pointer",
 });
 
+
+// ── Map ────────────────────────────────────────────────
+function MapScreen() {
+  return (
+    <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
+      {/* Header */}
+      <div style={{ padding: "24px 20px 16px", flexShrink: 0 }}>
+        <p style={{ fontSize: 10, color: "#aaa", margin: 0, letterSpacing: 1, textTransform: "uppercase" }}>My Routes</p>
+        <h2 style={{ fontSize: 22, fontWeight: 800, margin: "4px 0 0", color: "#111", letterSpacing: -0.5 }}>지도</h2>
+      </div>
+
+      {/* Map skeleton — infinite shimmer */}
+      <div style={{ flex: 1, margin: "0 20px", borderRadius: 20, overflow: "hidden", position: "relative", background: "#e8e8e8" }}>
+        {/* Grid lines skeleton */}
+        <div style={{ position: "absolute", inset: 0, overflow: "hidden" }}>
+          {/* Horizontal roads */}
+          {[15, 32, 50, 65, 80].map(pct => (
+            <div key={pct} style={{
+              position: "absolute", left: 0, right: 0,
+              top: `${pct}%`, height: pct === 50 ? 6 : 3,
+              background: "#ddd",
+            }} />
+          ))}
+          {/* Vertical roads */}
+          {[20, 40, 60, 78].map(pct => (
+            <div key={pct} style={{
+              position: "absolute", top: 0, bottom: 0,
+              left: `${pct}%`, width: pct === 40 ? 5 : 2,
+              background: "#ddd",
+            }} />
+          ))}
+          {/* Block fills */}
+          {[
+            { top: 2, left: 2, w: 17, h: 12 },
+            { top: 2, left: 21, w: 18, h: 12 },
+            { top: 2, left: 41, w: 18, h: 12 },
+            { top: 2, left: 61, w: 16, h: 12 },
+            { top: 16, left: 2, w: 17, h: 15 },
+            { top: 16, left: 21, w: 18, h: 15 },
+            { top: 16, left: 41, w: 18, h: 15 },
+            { top: 16, left: 61, w: 16, h: 15 },
+            { top: 33, left: 2, w: 17, h: 16 },
+            { top: 33, left: 21, w: 18, h: 16 },
+            { top: 33, left: 41, w: 18, h: 16 },
+            { top: 33, left: 61, w: 16, h: 16 },
+            { top: 51, left: 2, w: 17, h: 13 },
+            { top: 51, left: 21, w: 18, h: 13 },
+            { top: 51, left: 41, w: 18, h: 13 },
+            { top: 51, left: 61, w: 16, h: 13 },
+            { top: 66, left: 2, w: 17, h: 13 },
+            { top: 66, left: 21, w: 18, h: 13 },
+            { top: 66, left: 41, w: 18, h: 13 },
+            { top: 66, left: 61, w: 16, h: 13 },
+            { top: 81, left: 2, w: 17, h: 17 },
+            { top: 81, left: 21, w: 18, h: 17 },
+            { top: 81, left: 41, w: 18, h: 17 },
+            { top: 81, left: 61, w: 16, h: 17 },
+          ].map((b, i) => (
+            <div key={i} style={{
+              position: "absolute",
+              top: `${b.top}%`, left: `${b.left}%`,
+              width: `${b.w}%`, height: `${b.h}%`,
+              background: "#e0e0e0",
+            }} />
+          ))}
+          {/* Shimmer overlay */}
+          <div style={{
+            position: "absolute", inset: 0,
+            background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.55) 50%, transparent 100%)",
+            backgroundSize: "200% 100%",
+            animation: "shimmer 1.6s infinite",
+          }} />
+        </div>
+
+        {/* GPS 위치 없음 안내 */}
+        <div style={{
+          position: "absolute", inset: 0,
+          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+          gap: 10,
+        }}>
+          <div style={{
+            background: "rgba(255,255,255,0.92)", borderRadius: 16,
+            padding: "18px 24px", textAlign: "center",
+            boxShadow: "0 2px 16px rgba(0,0,0,0.08)",
+          }}>
+            <div style={{
+              width: 36, height: 36, borderRadius: 99,
+              background: "#f0f0f0", margin: "0 auto 10px",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              <div style={{ width: 12, height: 12, borderRadius: 99, background: "#ccc" }} />
+            </div>
+            <p style={{ fontSize: 13, fontWeight: 700, color: "#111", margin: 0 }}>위치 불러오는 중</p>
+            <p style={{ fontSize: 11, color: "#bbb", margin: "4px 0 0" }}>GPS 연결을 확인하고 있어요</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Route list skeletons */}
+      <div style={{ padding: "16px 20px 0", display: "flex", flexDirection: "column", gap: 10 }}>
+        <p style={{ fontSize: 12, fontWeight: 700, color: "#111", margin: 0 }}>최근 경로</p>
+        {[1, 2, 3].map(i => (
+          <div key={i} style={{ display: "flex", gap: 12, alignItems: "center" }}>
+            <div style={{
+              width: 44, height: 44, borderRadius: 12,
+              background: "#f0f0f0", position: "relative", overflow: "hidden", flexShrink: 0,
+            }}>
+              <div style={{
+                position: "absolute", inset: 0,
+                background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent)",
+                animation: "shimmer 1.6s infinite",
+              }} />
+            </div>
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
+              <div style={{
+                height: 11, borderRadius: 6,
+                background: "#f0f0f0", width: `${55 + i * 12}%`,
+                position: "relative", overflow: "hidden",
+              }}>
+                <div style={{
+                  position: "absolute", inset: 0,
+                  background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent)",
+                  animation: `shimmer 1.6s ${i * 0.2}s infinite`,
+                }} />
+              </div>
+              <div style={{
+                height: 9, borderRadius: 6,
+                background: "#f5f5f5", width: `${35 + i * 8}%`,
+                position: "relative", overflow: "hidden",
+              }}>
+                <div style={{
+                  position: "absolute", inset: 0,
+                  background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent)",
+                  animation: `shimmer 1.6s ${i * 0.3}s infinite`,
+                }} />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <style>{`
+        @keyframes shimmer {
+          0% { background-position: -200% 0; }
+          100% { background-position: 200% 0; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
 // ── History ────────────────────────────────────────────
 function HistoryScreen() {
+  const [shareTarget, setShareTarget] = useState<number | null>(null);
+
   return (
     <div style={{ padding: "24px 20px 0" }}>
       <div style={{ marginBottom: 22 }}>
@@ -266,15 +420,108 @@ function HistoryScreen() {
                   </p>
                 </div>
               </div>
-              <p style={{ fontSize: 12, color: "#ccc", margin: 0, fontVariantNumeric: "tabular-nums" }}>{h.pace}</p>
+              <button
+                onClick={() => setShareTarget(h.id)}
+                style={{
+                  background: "none", border: "none", cursor: "pointer",
+                  padding: "6px 8px", borderRadius: 8,
+                  display: "flex", alignItems: "center", gap: 4,
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <circle cx="18" cy="5" r="3" stroke="#ccc" strokeWidth="1.8"/>
+                  <circle cx="6" cy="12" r="3" stroke="#ccc" strokeWidth="1.8"/>
+                  <circle cx="18" cy="19" r="3" stroke="#ccc" strokeWidth="1.8"/>
+                  <path d="M8.7 10.7l6.6-3.4M8.7 13.3l6.6 3.4" stroke="#ccc" strokeWidth="1.8"/>
+                </svg>
+              </button>
             </div>
             {i < HISTORY.length - 1 && <div style={{ height: 1, background: "#f5f5f5" }} />}
           </div>
         ))}
       </div>
+
+      {/* SNS Share Sheet */}
+      {shareTarget !== null && (() => {
+        const h = HISTORY.find(x => x.id === shareTarget)!;
+        const sns = [
+          { name: "Instagram", color: "#E1306C", icon: "IG" },
+          { name: "카카오", color: "#FEE500", textColor: "#391B1B", icon: "K" },
+          { name: "X", color: "#111", icon: "X" },
+          { name: "링크 복사", color: "#f5f5f5", textColor: "#111", icon: "≡" },
+        ];
+        return (
+          <>
+            {/* Backdrop */}
+            <div
+              onClick={() => setShareTarget(null)}
+              style={{
+                position: "fixed", inset: 0, background: "rgba(0,0,0,0.35)",
+                zIndex: 100,
+              }}
+            />
+            {/* Sheet */}
+            <div style={{
+              position: "fixed", left: "50%", bottom: 0,
+              transform: "translateX(-50%)",
+              width: "100%", maxWidth: 390,
+              background: "#fff", borderRadius: "24px 24px 0 0",
+              padding: "20px 20px 40px", zIndex: 101,
+            }}>
+              {/* Handle */}
+              <div style={{ width: 36, height: 4, borderRadius: 99, background: "#e0e0e0", margin: "0 auto 20px" }} />
+
+              {/* Preview Card */}
+              <div style={{
+                background: "#111", borderRadius: 18, padding: "20px 22px", marginBottom: 22, color: "#fff",
+              }}>
+                <p style={{ fontSize: 10, color: "#555", margin: "0 0 6px", letterSpacing: 1, textTransform: "uppercase" }}>Strolly · {h.date}</p>
+                <p style={{ fontSize: 40, fontWeight: 900, margin: 0, letterSpacing: -2, lineHeight: 1 }}>
+                  {h.km}<span style={{ fontSize: 16, fontWeight: 500, color: "#666", marginLeft: 4 }}>km</span>
+                </p>
+                <div style={{ display: "flex", gap: 16, marginTop: 14 }}>
+                  {[
+                    { label: "시간", value: `${h.minutes}분` },
+                    { label: "칼로리", value: `${h.cal}kcal` },
+                    { label: "페이스", value: h.pace },
+                  ].map(s => (
+                    <div key={s.label}>
+                      <p style={{ fontSize: 10, color: "#555", margin: 0 }}>{s.label}</p>
+                      <p style={{ fontSize: 14, fontWeight: 700, margin: "2px 0 0" }}>{s.value}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* SNS Buttons */}
+              <p style={{ fontSize: 11, color: "#bbb", margin: "0 0 14px", letterSpacing: 0.5 }}>공유하기</p>
+              <div style={{ display: "flex", gap: 10 }}>
+                {sns.map(s => (
+                  <div key={s.name} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 7 }}>
+                    <div style={{
+                      width: 52, height: 52, borderRadius: 16,
+                      background: s.color,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      cursor: "default",
+                    }}>
+                      <span style={{
+                        fontSize: 16, fontWeight: 900,
+                        color: (s as any).textColor ?? "#fff",
+                        letterSpacing: -0.5,
+                      }}>{s.icon}</span>
+                    </div>
+                    <span style={{ fontSize: 10, color: "#aaa" }}>{s.name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        );
+      })()}
     </div>
   );
 }
+
 
 // ── Badges ─────────────────────────────────────────────
 function BadgesScreen() {
@@ -379,12 +626,18 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "home", label: "홈" },
   { id: "walk", label: "산책" },
   { id: "history", label: "기록" },
-  { id: "badges", label: "뱃지" },
+  { id: "map", label: "지도" },
   { id: "profile", label: "프로필" },
 ];
 
 export default function StrollyApp() {
   const [tab, setTab] = useState<Tab>("home");
+  const [now, setNow] = useState(new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  const timeStr = now.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false });
 
   return (
     <div style={{
@@ -399,7 +652,7 @@ export default function StrollyApp() {
         height: 48, display: "flex", alignItems: "center",
         justifyContent: "space-between", padding: "0 22px", flexShrink: 0,
       }}>
-        <span style={{ fontSize: 13, fontWeight: 700, color: "#111" }}>9:41</span>
+        <span style={{ fontSize: 13, fontWeight: 700, color: "#111" }}>{timeStr}</span>
         <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
           <svg width="15" height="11" viewBox="0 0 15 11" fill="none">
             <rect x="0" y="5.5" width="2.5" height="5.5" rx="0.8" fill="#111"/>
@@ -423,9 +676,10 @@ export default function StrollyApp() {
 
       {/* Content */}
       <div style={{ flex: 1, overflowY: "auto", paddingBottom: 76 }}>
-        {tab === "home" && <HomeScreen setTab={setTab} />}
+        {tab === "home" && <HomeScreen setTab={setTab} now={now} />}
         {tab === "walk" && <WalkScreen />}
         {tab === "history" && <HistoryScreen />}
+        {tab === "map" && <MapScreen />}
         {tab === "badges" && <BadgesScreen />}
         {tab === "profile" && <ProfileScreen />}
       </div>
