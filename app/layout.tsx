@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import SwRegister from "@/public/Swregister";
+import SwRegister from "@/SwRegister";
 
 export const metadata: Metadata = {
   title: "Strolly",
