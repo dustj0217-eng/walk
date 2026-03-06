@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 
 type Tab = "home" | "walk" | "history" | "badges" | "profile";
