@@ -124,14 +124,15 @@ const FEED = [
 
 
 // ── Home ───────────────────────────────────────────────
-function HomeScreen({ setTab, now, onStartWalk }: { setTab: (t: Tab) => void; now: Date; onStartWalk: () => void }) {
+function HomeScreen({ setTab, onStartWalk }: { setTab: (t: Tab) => void; onStartWalk: () => void }) {
   const weekGoalKm = 20;
   const weekDoneKm = WEEK.reduce((a, d) => a + d.km, 0);
   const maxKm = Math.max(...WEEK.map(d => d.km), 1);
   const xpPct = (USER.xp / USER.xpMax) * 100;
-  const dow = now.getDay(); // 0=일
+  const _now = new Date();
+  const dow = _now.getDay();
   const todayIndex = dow === 0 ? 6 : dow - 1;
-  const greetingHour = now.getHours();
+  const greetingHour = _now.getHours();
   const greeting = greetingHour < 12 ? "좋은 아침이에요" : greetingHour < 18 ? "오늘도 걸어볼까요" : "오늘 하루 수고했어요";
 
   return (
@@ -806,8 +807,8 @@ function ProfileScreen({ onClose }: { onClose: () => void }) {
       }}>
         <h2 style={{ fontSize: 22, fontWeight: 800, margin: 0, color: "#111", letterSpacing: -0.5 }}>프로필</h2>
         <button onClick={onClose} style={{
-          background: "none", border: "none", cursor: "pointer",
-          width: 32, height: 32, borderRadius: 99,
+          border: "none", cursor: "pointer",
+          width: 32, height: 32, borderRadius: 99, background: "#fff",
           display: "flex", alignItems: "center", justifyContent: "center",
         }}>
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -905,17 +906,9 @@ const TABS: { id: Tab; label: string }[] = [
 
 export default function StrollyApp() {
   const [tab, setTab] = useState<Tab>("home");
-  const [now, setNow] = useState(new Date());
   const [menuOpen, setMenuOpen] = useState(false);
   const [walkOpen, setWalkOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-
-  useEffect(() => {
-    const t = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(t);
-  }, []);
-
-  const timeStr = now.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false });
 
   return (
     <div style={{
@@ -930,7 +923,7 @@ export default function StrollyApp() {
         height: 48, display: "flex", alignItems: "center",
         justifyContent: "space-between", padding: "0 22px", flexShrink: 0,
       }}>
-        <span style={{ fontSize: 13, fontWeight: 700, color: "#111" }}>{timeStr}</span>
+        <span style={{ fontSize: 13, fontWeight: 700, color: "#111" }}>Strolly</span>
         <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
           <svg width="15" height="11" viewBox="0 0 15 11" fill="none">
             <rect x="0" y="5.5" width="2.5" height="5.5" rx="0.8" fill="#111"/>
@@ -971,7 +964,7 @@ export default function StrollyApp() {
 
       {/* Content */}
       <div style={{ flex: 1, overflowY: "auto", paddingBottom: 76 }}>
-        {tab === "home" && <HomeScreen setTab={setTab} now={now} onStartWalk={() => setWalkOpen(true)} />}
+        {tab === "home" && <HomeScreen setTab={setTab} onStartWalk={() => setWalkOpen(true)} />}
         {tab === "history" && <HistoryScreen />}
         {tab === "map" && <MapScreen />}
         {tab === "community" && <CommunityScreen />}
@@ -990,7 +983,7 @@ export default function StrollyApp() {
           }}>
             <span style={{
               fontSize: 12, fontWeight: tab === t.id ? 800 : 400,
-              color: tab === t.id ? "#111" : "#f8f8f8",
+              color: tab === t.id ? "#111" : "#c8c8c8",
               letterSpacing: tab === t.id ? -0.2 : 0,
             }}>{t.label}</span>
             <div style={{ width: 4, height: 4, borderRadius: 99, background: tab === t.id ? "#111" : "transparent" }} />
