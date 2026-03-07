@@ -990,7 +990,7 @@ export default function StrollyApp() {
           }}>
             <span style={{
               fontSize: 12, fontWeight: tab === t.id ? 800 : 400,
-              color: tab === t.id ? "#111" : "#c8c8c8",
+              color: tab === t.id ? "#111" : "#f8f8f8",
               letterSpacing: tab === t.id ? -0.2 : 0,
             }}>{t.label}</span>
             <div style={{ width: 4, height: 4, borderRadius: 99, background: tab === t.id ? "#111" : "transparent" }} />
